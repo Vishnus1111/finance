@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+/* Excel-like colorful headers for JSpreadsheet (v4) */
+.jexcel .jexcel_header {
+  background: linear-gradient(180deg, #38bdf8 0%, #0ea5e9 100%);
+  color: #ffffff;
+  font-weight: 600;
+  border-right: 1px solid rgba(255,255,255,0.4);
+}
+
+/* Row headers styling */
+.jexcel .jexcel_row {
+  background: #f1f5f9;
+  color: #334155;
+  font-weight: 600;
+  border-right: 1px solid #e2e8f0;
+}
+
+/* Header hover/focus states */
+.jexcel .jexcel_header:hover,
+.jexcel .jexcel_header.selected {
+  background: linear-gradient(180deg, #22d3ee 0%, #0ea5e9 100%);
+}
+
+/* Frozen columns styling - ensure they stay visible */
+.jexcel > tbody > tr > td.jexcel_frozen {
+  position: sticky !important;
+  left: 0 !important;
+  z-index: 2 !important;
+  background-color: #fff !important;
+}
+
+.jexcel > thead > tr > td.jexcel_frozen {
+  position: sticky !important;
+  left: 0 !important;
+  z-index: 3 !important;
+}
+
+/* Style for frozen column separator */
+.jexcel > tbody > tr > td.jexcel_frozen:last-of-type,
+.jexcel > thead > tr > td.jexcel_frozen:last-of-type {
+  border-right: 2px solid #0ea5e9 !important;
+}
