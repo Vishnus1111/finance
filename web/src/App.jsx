@@ -304,14 +304,18 @@ export default function App() {
 
       // Helper to get previous collection value for suggestions
       const getPreviousCollectionValue = (rowIndex, colIndex) => {
-        // Look backward from the current column to find the last non-empty value
+        // Look backward from the current column to find the last non-zero, non-empty value
         for (let c = colIndex - 1; c >= 9; c--) {
           // Skip weekly total columns
           if (totalColumnsSet.has(c)) continue
           
           const cellValue = spreadsheetInstance.getValueFromCoords(c, rowIndex)
           if (cellValue !== undefined && cellValue !== null && cellValue !== '' && cellValue !== '-') {
-            return cellValue
+            // Parse the value to check if it's not zero
+            const numValue = parseFloat(String(cellValue).replace(/,/g, ''))
+            if (!isNaN(numValue) && numValue !== 0) {
+              return cellValue
+            }
           }
         }
         
