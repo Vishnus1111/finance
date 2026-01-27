@@ -302,6 +302,24 @@ export default function App() {
         }
       }
 
+      // Helper to get previous collection value for suggestions
+      const getPreviousCollectionValue = (rowIndex, colIndex) => {
+        // Look backward from the current column to find the last non-empty value
+        for (let c = colIndex - 1; c >= 9; c--) {
+          // Skip weekly total columns
+          if (totalColumnsSet.has(c)) continue
+          
+          const cellValue = spreadsheetInstance.getValueFromCoords(c, rowIndex)
+          if (cellValue !== undefined && cellValue !== null && cellValue !== '' && cellValue !== '-') {
+            return cellValue
+          }
+        }
+        
+        // If no previous collection found, return the Amount value (column 7)
+        const amountValue = spreadsheetInstance.getValueFromCoords(7, rowIndex)
+        return amountValue || ''
+      }
+
       const createSpreadsheet = () => {
         if (sheetInstanceRef.current) {
           console.log('Spreadsheet already initialized; skipping re-init')
@@ -343,6 +361,112 @@ export default function App() {
               items.push({ title: 'Delete Row', onclick: function() { obj.deleteRow(y); } });
             }
             return items;
+          },
+          oneditionstart: function(instance, cell, x, y, value) {
+            const colIndex = parseInt(x)
+            const rowIndex = parseInt(y)
+            
+            // Only show suggestions for date columns (col 9 onwards, excluding total columns)
+            if (colIndex >= 9 && !totalColumnsSet.has(colIndex)) {
+              // Remove any existing suggestion boxes first
+              const existingSuggestions = document.querySelectorAll('.suggestion-box')
+              existingSuggestions.forEach(el => el.remove())
+              
+              // Get cell position
+              const cellElement = spreadsheetInstance.getCellFromCoords(colIndex, rowIndex)
+              if (!cellElement) return
+              
+              const rect = cellElement.getBoundingClientRect()
+              const containerRect = element.getBoundingClientRect()
+              
+              // Create suggestion container
+              const suggestionContainer = document.createElement('div')
+              suggestionContainer.className = 'suggestion-box'
+              suggestionContainer.style.position = 'absolute'
+              suggestionContainer.style.top = (rect.bottom - containerRect.top) + 'px'
+              suggestionContainer.style.left = (rect.left - containerRect.left) + 'px'
+              suggestionContainer.style.width = rect.width + 'px'
+              suggestionContainer.style.display = 'flex'
+              suggestionContainer.style.gap = '2px'
+              suggestionContainer.style.zIndex = '9999'
+              suggestionContainer.style.marginTop = '2px'
+              
+              // Left suggestion: "-" (no payment)
+              const leftBtn = document.createElement('button')
+              leftBtn.textContent = '-'
+              leftBtn.className = 'suggestion-btn'
+              leftBtn.style.flex = '1'
+              leftBtn.style.padding = '4px 8px'
+              leftBtn.style.backgroundColor = '#f3f4f6'
+              leftBtn.style.border = '1px solid #d1d5db'
+              leftBtn.style.borderRadius = '4px'
+              leftBtn.style.cursor = 'pointer'
+              leftBtn.style.fontSize = '12px'
+              leftBtn.style.fontWeight = '500'
+              leftBtn.style.transition = 'all 0.2s'
+              leftBtn.onmouseover = () => {
+                leftBtn.style.backgroundColor = '#e5e7eb'
+                leftBtn.style.transform = 'scale(1.05)'
+              }
+              leftBtn.onmouseout = () => {
+                leftBtn.style.backgroundColor = '#f3f4f6'
+                leftBtn.style.transform = 'scale(1)'
+              }
+              leftBtn.onmousedown = (e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                
+                // Set the value directly using the instance
+                spreadsheetInstance.setValue(cellElement, '-', true)
+                
+                // Remove suggestion box
+                setTimeout(() => suggestionContainer.remove(), 10)
+              }
+              
+              // Right suggestion: previous day's value or Amount
+              const prevValue = getPreviousCollectionValue(rowIndex, colIndex)
+              const rightBtn = document.createElement('button')
+              rightBtn.textContent = prevValue || '0'
+              rightBtn.className = 'suggestion-btn'
+              rightBtn.style.flex = '1'
+              rightBtn.style.padding = '4px 8px'
+              rightBtn.style.backgroundColor = '#dbeafe'
+              rightBtn.style.border = '1px solid #93c5fd'
+              rightBtn.style.borderRadius = '4px'
+              rightBtn.style.cursor = 'pointer'
+              rightBtn.style.fontSize = '12px'
+              rightBtn.style.fontWeight = '500'
+              rightBtn.style.transition = 'all 0.2s'
+              rightBtn.onmouseover = () => {
+                rightBtn.style.backgroundColor = '#bfdbfe'
+                rightBtn.style.transform = 'scale(1.05)'
+              }
+              rightBtn.onmouseout = () => {
+                rightBtn.style.backgroundColor = '#dbeafe'
+                rightBtn.style.transform = 'scale(1)'
+              }
+              rightBtn.onmousedown = (e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                
+                // Set the value directly using the instance
+                spreadsheetInstance.setValue(cellElement, prevValue, true)
+                
+                // Remove suggestion box
+                setTimeout(() => suggestionContainer.remove(), 10)
+              }
+              
+              suggestionContainer.appendChild(leftBtn)
+              suggestionContainer.appendChild(rightBtn)
+              
+              // Append to the spreadsheet container
+              element.appendChild(suggestionContainer)
+            }
+          },
+          oneditionend: function(instance, cell, x, y, value) {
+            // Remove suggestion boxes when editing ends
+            const suggestionBoxes = document.querySelectorAll('.suggestion-box')
+            suggestionBoxes.forEach(box => box.remove())
           },
           onchange: function (instance, cell, colIndex, rowIndex, value) {
             console.log(`Cell changed: col=${colIndex}, row=${rowIndex}, value=${value}`)
