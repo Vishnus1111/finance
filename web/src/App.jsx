@@ -324,6 +324,51 @@ export default function App() {
         return amountValue || ''
       }
 
+      // Function to apply styling to all Balance and Total columns after data loads
+      const applyAllCellStyles = () => {
+        if (!spreadsheetInstance) return
+        
+        console.log('Applying cell styles to all rows...')
+        
+        for (let rowIndex = 0; rowIndex < rows; rowIndex++) {
+          // Style Balance column (column 8)
+          const balanceValue = spreadsheetInstance.getValueFromCoords(8, rowIndex)
+          if (balanceValue !== undefined && balanceValue !== null && balanceValue !== '') {
+            const balance = parseFloat(String(balanceValue).replace(/,/g, ''))
+            if (!isNaN(balance)) {
+              const cell = spreadsheetInstance.getCellFromCoords(8, rowIndex)
+              if (cell) {
+                if (balance > 0) {
+                  cell.style.color = 'orange'
+                  cell.style.fontWeight = 'bold'
+                } else if (balance === 0) {
+                  cell.style.color = 'green'
+                  cell.style.fontWeight = 'bold'
+                } else {
+                  cell.style.color = 'red'
+                  cell.style.fontWeight = 'bold'
+                }
+              }
+            }
+          }
+          
+          // Style all weekly total columns
+          weeklyTotalMeta.forEach(meta => {
+            const totalValue = spreadsheetInstance.getValueFromCoords(meta.index, rowIndex)
+            if (totalValue !== undefined && totalValue !== null && totalValue !== '') {
+              const cell = spreadsheetInstance.getCellFromCoords(meta.index, rowIndex)
+              if (cell) {
+                cell.style.color = 'green'
+                cell.style.fontWeight = 'bold'
+                cell.style.backgroundColor = '#e8f5e9'
+              }
+            }
+          })
+        }
+        
+        console.log('Cell styles applied successfully')
+      }
+
       const createSpreadsheet = () => {
         if (sheetInstanceRef.current) {
           console.log('Spreadsheet already initialized; skipping re-init')
@@ -372,99 +417,115 @@ export default function App() {
             
             // Only show suggestions for date columns (col 9 onwards, excluding total columns)
             if (colIndex >= 9 && !totalColumnsSet.has(colIndex)) {
-              // Remove any existing suggestion boxes first
-              const existingSuggestions = document.querySelectorAll('.suggestion-box')
-              existingSuggestions.forEach(el => el.remove())
-              
-              // Get cell position
-              const cellElement = spreadsheetInstance.getCellFromCoords(colIndex, rowIndex)
-              if (!cellElement) return
-              
-              const rect = cellElement.getBoundingClientRect()
-              const containerRect = element.getBoundingClientRect()
-              
-              // Create suggestion container
-              const suggestionContainer = document.createElement('div')
-              suggestionContainer.className = 'suggestion-box'
-              suggestionContainer.style.position = 'absolute'
-              suggestionContainer.style.top = (rect.bottom - containerRect.top) + 'px'
-              suggestionContainer.style.left = (rect.left - containerRect.left) + 'px'
-              suggestionContainer.style.width = rect.width + 'px'
-              suggestionContainer.style.display = 'flex'
-              suggestionContainer.style.gap = '2px'
-              suggestionContainer.style.zIndex = '9999'
-              suggestionContainer.style.marginTop = '2px'
-              
-              // Left suggestion: "-" (no payment)
-              const leftBtn = document.createElement('button')
-              leftBtn.textContent = '-'
-              leftBtn.className = 'suggestion-btn'
-              leftBtn.style.flex = '1'
-              leftBtn.style.padding = '4px 8px'
-              leftBtn.style.backgroundColor = '#f3f4f6'
-              leftBtn.style.border = '1px solid #d1d5db'
-              leftBtn.style.borderRadius = '4px'
-              leftBtn.style.cursor = 'pointer'
-              leftBtn.style.fontSize = '12px'
-              leftBtn.style.fontWeight = '500'
-              leftBtn.style.transition = 'all 0.2s'
-              leftBtn.onmouseover = () => {
-                leftBtn.style.backgroundColor = '#e5e7eb'
-                leftBtn.style.transform = 'scale(1.05)'
-              }
-              leftBtn.onmouseout = () => {
+              // Use setTimeout to ensure editor is fully initialized
+              setTimeout(() => {
+                // Remove any existing suggestion boxes first
+                const existingSuggestions = document.querySelectorAll('.suggestion-box')
+                existingSuggestions.forEach(el => el.remove())
+                
+                // Get cell position
+                const cellElement = spreadsheetInstance.getCellFromCoords(colIndex, rowIndex)
+                if (!cellElement) return
+                
+                const rect = cellElement.getBoundingClientRect()
+                const containerRect = element.getBoundingClientRect()
+                
+                // Create suggestion container
+                const suggestionContainer = document.createElement('div')
+                suggestionContainer.className = 'suggestion-box'
+                suggestionContainer.style.position = 'absolute'
+                suggestionContainer.style.top = (rect.bottom - containerRect.top) + 'px'
+                suggestionContainer.style.left = (rect.left - containerRect.left) + 'px'
+                suggestionContainer.style.width = rect.width + 'px'
+                suggestionContainer.style.display = 'flex'
+                suggestionContainer.style.gap = '2px'
+                suggestionContainer.style.zIndex = '10000'
+                suggestionContainer.style.marginTop = '2px'
+                
+                // Left suggestion: "-" (no payment)
+                const leftBtn = document.createElement('button')
+                leftBtn.textContent = '-'
+                leftBtn.className = 'suggestion-btn'
+                leftBtn.style.flex = '1'
+                leftBtn.style.padding = '4px 8px'
                 leftBtn.style.backgroundColor = '#f3f4f6'
-                leftBtn.style.transform = 'scale(1)'
-              }
-              leftBtn.onmousedown = (e) => {
-                e.preventDefault()
-                e.stopPropagation()
+                leftBtn.style.border = '1px solid #d1d5db'
+                leftBtn.style.borderRadius = '4px'
+                leftBtn.style.cursor = 'pointer'
+                leftBtn.style.fontSize = '12px'
+                leftBtn.style.fontWeight = '500'
+                leftBtn.style.transition = 'all 0.2s'
+                leftBtn.tabIndex = -1
+                leftBtn.onmouseover = () => {
+                  leftBtn.style.backgroundColor = '#e5e7eb'
+                  leftBtn.style.transform = 'scale(1.05)'
+                }
+                leftBtn.onmouseout = () => {
+                  leftBtn.style.backgroundColor = '#f3f4f6'
+                  leftBtn.style.transform = 'scale(1)'
+                }
+                leftBtn.onmousedown = (e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  
+                  // Set the value directly
+                  spreadsheetInstance.setValueFromCoords(colIndex, rowIndex, '-')
+                  
+                  // Remove suggestion box and close editor
+                  suggestionContainer.remove()
+                }
+                leftBtn.onclick = (e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                }
                 
-                // Set the value directly using the instance
-                spreadsheetInstance.setValue(cellElement, '-', true)
-                
-                // Remove suggestion box
-                setTimeout(() => suggestionContainer.remove(), 10)
-              }
-              
-              // Right suggestion: previous day's value or Amount
-              const prevValue = getPreviousCollectionValue(rowIndex, colIndex)
-              const rightBtn = document.createElement('button')
-              rightBtn.textContent = prevValue || '0'
-              rightBtn.className = 'suggestion-btn'
-              rightBtn.style.flex = '1'
-              rightBtn.style.padding = '4px 8px'
-              rightBtn.style.backgroundColor = '#dbeafe'
-              rightBtn.style.border = '1px solid #93c5fd'
-              rightBtn.style.borderRadius = '4px'
-              rightBtn.style.cursor = 'pointer'
-              rightBtn.style.fontSize = '12px'
-              rightBtn.style.fontWeight = '500'
-              rightBtn.style.transition = 'all 0.2s'
-              rightBtn.onmouseover = () => {
-                rightBtn.style.backgroundColor = '#bfdbfe'
-                rightBtn.style.transform = 'scale(1.05)'
-              }
-              rightBtn.onmouseout = () => {
+                // Right suggestion: previous day's value or Amount
+                const prevValue = getPreviousCollectionValue(rowIndex, colIndex)
+                const rightBtn = document.createElement('button')
+                rightBtn.textContent = prevValue || '0'
+                rightBtn.className = 'suggestion-btn'
+                rightBtn.style.flex = '1'
+                rightBtn.style.padding = '4px 8px'
                 rightBtn.style.backgroundColor = '#dbeafe'
-                rightBtn.style.transform = 'scale(1)'
-              }
-              rightBtn.onmousedown = (e) => {
-                e.preventDefault()
-                e.stopPropagation()
+                rightBtn.style.border = '1px solid #93c5fd'
+                rightBtn.style.borderRadius = '4px'
+                rightBtn.style.cursor = 'pointer'
+                rightBtn.style.fontSize = '12px'
+                rightBtn.style.fontWeight = '500'
+                rightBtn.style.transition = 'all 0.2s'
+                rightBtn.tabIndex = -1
+                rightBtn.onmouseover = () => {
+                  rightBtn.style.backgroundColor = '#bfdbfe'
+                  rightBtn.style.transform = 'scale(1.05)'
+                }
+                rightBtn.onmouseout = () => {
+                  rightBtn.style.backgroundColor = '#dbeafe'
+                  rightBtn.style.transform = 'scale(1)'
+                }
+                rightBtn.onmousedown = (e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  
+                  // Set the value directly
+                  spreadsheetInstance.setValueFromCoords(colIndex, rowIndex, prevValue)
+                  
+                  // Remove suggestion box and close editor
+                  suggestionContainer.remove()
+                }
+                rightBtn.onclick = (e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                }
                 
-                // Set the value directly using the instance
-                spreadsheetInstance.setValue(cellElement, prevValue, true)
+                suggestionContainer.appendChild(leftBtn)
+                suggestionContainer.appendChild(rightBtn)
                 
-                // Remove suggestion box
-                setTimeout(() => suggestionContainer.remove(), 10)
-              }
-              
-              suggestionContainer.appendChild(leftBtn)
-              suggestionContainer.appendChild(rightBtn)
-              
-              // Append to the spreadsheet container
-              element.appendChild(suggestionContainer)
+                // Append to the spreadsheet container with higher priority
+                element.style.position = 'relative'
+                element.appendChild(suggestionContainer)
+                
+                console.log('Suggestions displayed for col:', colIndex, 'row:', rowIndex)
+              }, 10)
             }
           },
           oneditionend: function(instance, cell, x, y, value) {
@@ -495,6 +556,33 @@ export default function App() {
         })
 
         try { sheetInstanceRef.current = spreadsheetInstance } catch (e) {}
+        
+        // Style the header row after spreadsheet is created
+        setTimeout(() => {
+          const headers = element.querySelectorAll('thead td')
+          headers.forEach((header, index) => {
+            const headerText = header.textContent.trim()
+            
+            // Balance column (column 8) - orange background
+            if (index === 8 || headerText === 'Balance') {
+              header.style.backgroundColor = '#FFA500'
+              header.style.color = '#ffffff'
+              header.style.fontWeight = 'bold'
+            }
+            // Weekly total columns - green background
+            else if (headerText.startsWith('Total wk')) {
+              header.style.backgroundColor = '#4CAF50'
+              header.style.color = '#ffffff'
+              header.style.fontWeight = 'bold'
+            }
+            // All other headers - sky blue background
+            else {
+              header.style.backgroundColor = '#87CEEB'
+              header.style.color = '#000000'
+              header.style.fontWeight = 'bold'
+            }
+          })
+        }, 100)
       }
 
       // Try to load data from localStorage first, then Firestore
@@ -548,6 +636,11 @@ export default function App() {
         }
         
         createSpreadsheet()
+        
+        // Apply styling to all cells after spreadsheet is created and data is loaded
+        setTimeout(() => {
+          applyAllCellStyles()
+        }, 200)
       }
       
       loadData()
