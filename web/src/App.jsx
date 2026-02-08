@@ -931,8 +931,8 @@ export default function App() {
 
         try { sheetInstanceRef.current = spreadsheetInstance } catch (e) {}
         
-        // Mobile: single tap opens editor (keyboard) on any cell
-        if (window.innerWidth <= 768) {
+        // Touch devices: single tap opens editor (keyboard) on any cell
+        if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
           setTimeout(() => {
             const tbody = element.querySelector('.jexcel > tbody')
             if (tbody) {
