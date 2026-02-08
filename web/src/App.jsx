@@ -884,13 +884,6 @@ export default function App() {
             // Only show suggestions for date columns (col 9 onwards, excluding total columns)
             if (colIndex >= 9 && !totalColumnsSet.has(colIndex)) {
               showSuggestions(colIndex, rowIndex)
-              
-              // On mobile devices, automatically start editing to open keyboard
-              if (window.innerWidth <= 768) {
-                setTimeout(() => {
-                  spreadsheetInstance.openEditor(spreadsheetInstance.getCellFromCoords(colIndex, rowIndex))
-                }, 50)
-              }
             }
           },
           oneditionstart: function(instance, cell, x, y, value) {
@@ -937,6 +930,37 @@ export default function App() {
         })
 
         try { sheetInstanceRef.current = spreadsheetInstance } catch (e) {}
+        
+        // Mobile: single tap opens editor (keyboard) on any cell
+        if (window.innerWidth <= 768) {
+          setTimeout(() => {
+            const tbody = element.querySelector('.jexcel > tbody')
+            if (tbody) {
+              tbody.addEventListener('touchend', (e) => {
+                const td = e.target.closest('td')
+                if (!td || td.classList.contains('jexcel_row')) return
+                
+                // Don't interfere if already editing
+                if (spreadsheetInstance.edition) return
+                
+                // Get cell coordinates
+                const cellName = td.getAttribute('data-x')
+                const rowName = td.getAttribute('data-y')
+                if (cellName === null || rowName === null) return
+                
+                const colIdx = parseInt(cellName)
+                const rowIdx = parseInt(rowName)
+                
+                // Skip readonly columns (balance col 8, total columns)
+                if (colIdx === 8 || totalColumnsSet.has(colIdx)) return
+                
+                setTimeout(() => {
+                  spreadsheetInstance.openEditor(td)
+                }, 100)
+              })
+            }
+          }, 200)
+        }
         
         // Style the header row after spreadsheet is created
         setTimeout(() => {
