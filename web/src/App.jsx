@@ -884,6 +884,13 @@ export default function App() {
             // Only show suggestions for date columns (col 9 onwards, excluding total columns)
             if (colIndex >= 9 && !totalColumnsSet.has(colIndex)) {
               showSuggestions(colIndex, rowIndex)
+              
+              // On mobile devices, automatically start editing to open keyboard
+              if (window.innerWidth <= 768) {
+                setTimeout(() => {
+                  spreadsheetInstance.openEditor(spreadsheetInstance.getCellFromCoords(colIndex, rowIndex))
+                }, 50)
+              }
             }
           },
           oneditionstart: function(instance, cell, x, y, value) {
