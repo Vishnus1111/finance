@@ -847,7 +847,7 @@ export default function App() {
           freezeColumns: 1,
           tableOverflow: true,
           tableWidth: '100%',
-          tableHeight: '80vh',
+          tableHeight: window.innerWidth <= 768 ? '70vh' : '80vh',
           allowComments: true,
           fullscreen: false,
           toolbar: true,
