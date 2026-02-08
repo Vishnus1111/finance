@@ -46,10 +46,20 @@ body {
   z-index: 3 !important;
 }
 
-/* Style for frozen column separator */
+/* Style for frozen column separator - dark black right border on பெயர் column */
 .jexcel > tbody > tr > td.jexcel_frozen:last-of-type,
 .jexcel > thead > tr > td.jexcel_frozen:last-of-type {
-  border-right: 2px solid #0ea5e9 !important;
+  border-right: 3px solid #000000 !important;
+}
+
+/* Fallback: target 2nd column (பெயர்) directly */
+.jexcel > tbody > tr > td:nth-child(2),
+.jexcel > thead > tr > td:nth-child(2) {
+  border-right: 3px solid #000000 !important;
+}
+
+.jexcel tfoot.column-totals-footer tr > td:nth-child(2) {
+  border-right: 3px solid #000000 !important;
 }
 
 /* Sticky bottom totals row */
