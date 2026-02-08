@@ -180,4 +180,11 @@ body {
     background: inherit !important;
     box-shadow: 2px 0 4px rgba(0,0,0,0.1);
   }
+  
+  /* Dark black border on பெயர் column (mobile) */
+  .jexcel > tbody > tr > td:nth-child(2),
+  .jexcel > thead > tr > td:nth-child(2),
+  .jexcel tfoot.column-totals-footer tr > td:nth-child(2) {
+    border-right: 3px solid #000000 !important;
+  }
 }
